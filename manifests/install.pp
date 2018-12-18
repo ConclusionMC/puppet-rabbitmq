@@ -1,34 +1,29 @@
 # Class rabbitmq::install
-# Ensures the rabbitmq-server exists
+# Ensures that rabbitmq-server exists
 class rabbitmq::install {
 
-  $package_ensure   = $rabbitmq::package_ensure
-  $package_name     = $rabbitmq::package_name
-  $package_provider = $rabbitmq::package_provider
-  $package_require  = $rabbitmq::package_require
-  $package_source   = $rabbitmq::real_package_source
+  $package_ensure        = $rabbitmq::package_ensure
+  $package_erlang_ensure = $rabbitmq::package_erlang_ensure
+  $package_name          = $rabbitmq::package_name
+  $package_erlang_name   = $rabbitmq::package_erlang_name
+  $rabbitmq_group        = $rabbitmq::rabbitmq_group
 
-  package { 'rabbitmq-server':
-    ensure   => $package_ensure,
-    name     => $package_name,
-    provider => $package_provider,
-    notify   => Class['rabbitmq::service'],
-    require  => $package_require,
+  package { $package_erlang_name:
+    ensure => $package_erlang_ensure,
   }
 
-  if $package_source {
-    Package['rabbitmq-server'] {
-      source  => $package_source,
-    }
+  -> package { $package_name:
+    ensure => $package_ensure,
+    notify => Class['rabbitmq::service'],
   }
 
   if $rabbitmq::environment_variables['MNESIA_BASE'] {
     file { $rabbitmq::environment_variables['MNESIA_BASE']:
       ensure  => 'directory',
       owner   => 'root',
-      group   => 'rabbitmq',
+      group   => $rabbitmq_group,
       mode    => '0775',
-      require => Package['rabbitmq-server'],
+      require => Package[$package_name],
     }
   }
 }
